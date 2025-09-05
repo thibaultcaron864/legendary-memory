@@ -3,11 +3,11 @@ from os.path import join
 
 # read config info into this namespace
 #configfile: "config.yaml"
-PATH_TO_DATA="/home/jp/Penicillium_roqueforti/data"
-RESULTS_PATH="/home/jp/Penicillium_roqueforti/results" # Path and name of your results folder
-REFERENCE_BOWTIE2="/home/jp/Penicillium_roqueforti/reference_genomes/GCA_001599855.1_JCM_22842_assembly_v001_genomic.fna" # Path and file
-DICT_SAMTOOLS="/home/jp/Penicillium_roqueforti/reference_genomes/GCA_001599855.1_JCM_22842_assembly_v001_genomic.dict" ### TO DO 
-ADAPTERS_FILE="/home/jp/Penicillium_roqueforti/data/adapter_long_list.fa"
+PATH_TO_DATA="/home/thibault/Penicillium_roqueforti/data"
+RESULTS_PATH="/home/thibault/Penicillium_roqueforti/results" # Path and name of your results folder
+REFERENCE_BOWTIE2="/home/thibault/Penicillium_roqueforti/reference_genomes/GCA_001599855.1_JCM_22842_assembly_v001_genomic.fna" # Path and file
+DICT_SAMTOOLS="/home/thibault/Penicillium_roqueforti/reference_genomes/GCA_001599855.1_JCM_22842_assembly_v001_genomic.dict" ### TO DO 
+ADAPTERS_FILE="/home/thibault/Penicilium_roqueforti/data/adapter_long_list.fa"
 
 (STRAINS,SAMPLES,STRANDS) = glob_wildcards(join(PATH_TO_DATA,"{strain}/{sample}_{strand}.fastq.gz"))
 #STRANDS=["R1","R2"]
