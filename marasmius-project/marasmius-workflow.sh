@@ -253,7 +253,7 @@ conda create -n blobtools blobtools
 		nohup iqtree -s nt_90/supermatrix/SUPERMATRIX.phylip --alrt 1000 -bb 1000 -nt 40 >iqtree_nt90.log 2>iqtree_nt90.err & #alrt stands for approximate likelihood ratio test, bb for ultra-fastbootstrap
 		cd input_nt_90/
 		iqtree -t supermatrix/SUPERMATRIX.phylip.treefile --gcf gene_trees_single_copy/ALL.tree -s supermatrix/SUPERMATRIX.phylip -p supermatrix/trimmed_alignments/ -T 20 >gcf.log 2>&1 & #add the gene concordance factor
-		iqtree -t supermatrix/SUPERMATRIX.phylip.treefile.cf.tree -s supermatrix/SUPERMATRIX.phylip --scfl 100 -T 20 > scf.log 2>&1 & #add the site-concordance factor
+		nohup iqtree -t supermatrix/SUPERMATRIX.phylip.treefile.cf.tree -s supermatrix/SUPERMATRIX.phylip --scfl 100 -T 20 > scf.log 2>&1 & #add the site-concordance factor
 		#no alrt, boostrap, gCF nor sCF for marro and sister, checking why
 		iqtree -t supermatrix/SUPERMATRIX.phylip.treefile -s supermatrix/SUPERMATRIX.phylip --gcf gene_trees_single_copy/ALL.tree --scf 100 --prefix check_marro -T 50 >check_marro.log 2>&1 &
 #astral
@@ -267,6 +267,7 @@ conda create -n blobtools blobtools
 		#pip3 install distro
 		#conda activate funannotate
 		mamba create -n funannotate2 funannotate #using conda causes a lot of trouble, python<3.9 is deprecated, missing distro, repeatmasker, repeatmodeler, iprscan
+	echo $fasta
 		conda install repeatmasker repeatmodeler
 	#database
 		funannotate setup -i all -b basidiomycota -d ./db
@@ -293,7 +294,7 @@ conda create -n blobtools blobtools
 		#perl path pointed to an old conda environment
 		sed -i 's/funannotate2/funannotate/g' ./*.pl
 		echo 'export genemark_path=/mnt/sdb/proj/thibault/gmes_linux_64_4' >>~/.bash_profile #if not found in path
-		echo 'export path=$path:/mnt/sdb/proj/thibault/gmes_linux_64_4' >>~/.bash_profile #i put it in the path to be sure
+		echo 'export path=$path:/mnt/sdb/proj/thibault/gmes_linux_64_4' >>~/.bash_profile #I put it in the path to be sure
 	#signalp
 		#https://services.healthtech.dtu.dk/services/signalp-4.1/ #linux version
 		scp downloads/signalp-5.0b.linux.tar.gz thibault@emb-p-susrv01.emb.su.se:/mnt/sdb/proj/Thibault/ #locally
@@ -331,7 +332,7 @@ conda create -n blobtools blobtools
 		#[mar 21 01:19 pm]: can't locate findbin.pm in @inc (you may need to install the findbin module) (@INC contains: /usr/local/lib64/perl5/5.32 /usr/local/share/perl5/5.32 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5) at /mnt/sdb/proj/Thibault/gmes_linux_64_4/gmes_petap.pl line 79.
 		#begin failed--compilation aborted at /mnt/sdb/proj/thibault/gmes_linux_64_4/gmes_petap.pl line 79.
 		./change_path_in_perl_scripts.pl /mnt/sdb/proj/thibault/miniconda3/envs/funannotate/bin/perl
-		funannotate test -t all -cpu 80 >funannotate.test.log2 #everything works except 'compare' due to iqtree missing dependency, I skip it for now CAUTION I accidentally did this second test while I was in /mnt/sdb/proj/Thibault/gmes_linux_64_4 the folder is a mess now
+		funannotate test -t all -cpu 80 >funannotate.test.log2 #everything works except 'compare' due to iqtree missing dependency, no need fot it though
 	#gene prediction
 		mkdir baemy1/ #same for others
 		for i in $(ls ../../assemblies/6_cleaned/*.fa); do echo funannotate predict -i $i -o $(echo $i | sed -E 's#.*/([^/]+)\.fa#\1/#') -s $(echo $i | sed -E 's#.*/([^/]+)\.fa#"\1"#') --busco_db basidiomycota --ploidy 2 --cpus 80 \>$(echo $i | sed -E 's#.*/([^/]+)\.fa#\1.predict.log#') 2\>\&1;done>predict.assemblies.sh
@@ -344,7 +345,7 @@ conda create -n blobtools blobtools
 			tar xvzf interproscan-5.59-91.0-64-bit.tar.gz
 			cd interproscan-5.73-104.0/
 			python3 setup.py -f interproscan.properties
-			for i in $(ls -d */ | grep -Ev '^(test|db)/?$'); do echo funannotate iprscan -i $i -m local -c 20 --iprscan_path /mnt/sdb/proj/thibault/interproscan-5.73-104.0/ \>$(echo $i | sed 's#/#.iprscan.log#') 2\>\&1;done>iprscan.sh
+			for i in $(ls -d */ | grep -Ev '^(test|db)/?$'); do echo funannotate iprscan -i $i -m local -c 20 --iprscan_path /mnt/sdb/proj/Thibault/interproscan-5.73-104.0/ \>$(echo $i | sed 's#/#.iprscan.log#') 2\>\&1;done>iprscan.sh
 		#eggnog
 			for i in $(ls -d */ | grep -Ev '^(test|db)/?$'); do echo funannotate annotate -i $i -o $i --busco_db basidiomycota --cpus 40 \>$(echo $i | sed 's#/#.annotate.log#') 2\>\&1;done>annotate.sh
 		#antismash
@@ -395,8 +396,9 @@ conda create -n blobtools blobtools
 			bash phobius.sh > phobius.log 2>phobius.err & #same for others
 			tail -q -n1 *phobius > baemy1.phobius #concatenate results, paste header manually (should have put it in the previous script)
 		#combine
-			for i in $(ls -d */ | grep -v test |grep -v db |sed 's#/##');do echo funannotate annotate -i $i/ -o $i/ --antismash ./antismash/$i.gbk --phobius ./phobius/$i.phobius --cpus 20 \>$i/$i.combine.log 2\>\&1;done >combine.sh
-		#everything has been put together in a one scrit containing all the steps
+			for i in $(ls -d */ | grep -v test |grep -v db |grep -v old|sed 's#/##');do echo funannotate annotate -i $i/ -o $i/ --antismash $i/antismash/$i.gbk --phobius $i/phobius/$i.phobius --cpus 20 \>$i/$i.combine.log 2\>\&1;done >combine.sh
+			#warning: the automatic logs (funannotate-annotate.xxx + genome.fixedproducts) are printed in the current working directory, because of the loop i.e. in the parent directory funannotate/, 
+		#everything has been put together in a one scrit "funannotate.all.assemblies.sh" containing all the steps
 		#curating
 		head */annotate_results/Gene2Products.need-curating.txt > curating.txt #don't know what to do with this, I stop
 	#earlgrey
@@ -417,8 +419,7 @@ conda create -n blobtools blobtools
 #orthofinder
 	conda create -n orthofinder orthofinder #pasted installation message in orthofinder.install
 	mkdir phylo/orthofinder
-	mkdir proteomes #no need to create ths folder
-	for i in $(ls ../../../annotation/funannotate/*/ -d |grep -v test |grep -v db); do echo cp $i/annotate_results/*proteins.fa $(echo $i|cut -d'/' -f6|sed 's#$#.faa#');done|bash
+	for i in $(ls ../../annotation/funannotate/*/ -d |grep -v test |grep -v db |grep -v old); do echo cp $i\annotate_results/*proteins.fa $(echo $i|cut -d'/' -f5|sed 's#$#.faa#');done|bash
 	nohup orthofinder -f proteomes/ -t 48 -a 48 > orthofinder.log 2>orthofinder.err &
 #ITS identification
 	wget https://microbiology.se/sw/ITSx_1.1.3.tar.gz
@@ -453,30 +454,21 @@ conda create -n blobtools blobtools
 	#funannotate (~/Documents/WORK/MARASMIUS/annotation/funannotate)
 		scp thibault@emb-p-susrv01.emb.su.se:/mnt/sdb/proj/Thibault/marasmius/annotation/funannotate/*/annotate_results/*gff3 . 
 		bash genome-annotation-stats.sh ./ > genome-annotation-stats.tsv
-#TO DO #############################################################################################################################################
+#TO continue #
 	#earlgrey (~/Documents/WORK/MARASMIUS/annotation/earlgrey)
 		scp thibault@emb-p-susrv01.emb.su.se:/mnt/sdb/proj/Thibault/marasmius/annotation/earlgrey/*/*_EarlGrey/*_summaryFiles/*.familyLevelCount.txt .
 		bash covmatrix.sh
 		#import coverage_superfamily_matrix on R, see genome-stats.R
-#TO BE CONTINUED #####################################################################################################################################################################
-#to ask to Markus on spore later
-ncbi_blast+
-seqkit
-fastx_toolkit
-docker
-singularity
-bedtools
-samtools
+	#iqtree (~/Documents/WORK/MARASMIUS/phylo/iqtree )
+		scp thibault@emb-p-susrv01.emb.su.se:/mnt/sdb/proj/Thibault/marasmius/phylo/iqtree/nt_90/supermatrix/SUPERMATRIX.phylip.cf.tree .
+######
+#END #
+######
 
-#other decontamination tools to think about
-https://github.com/h836472/ContScout
-https://github.com/ncbi/fcs
-#scaffolding tools
-#ragtag
-#ntLink
-#yaHS
+#other decontamination tools to think about: https://github.com/h836472/ContScout https://github.com/ncbi/fcs
+#scaffolding tools: ragtag, yaHS
 
-#OTHER COMMANDS NOT SELECTED FOR FURTHER STEPS
+#### OTHER COMMANDS NOT SELECTED FOR FURTHER STEPS ####
 #decontaminate reads
 	conda create -n kraken2 kraken2
 	cd data
